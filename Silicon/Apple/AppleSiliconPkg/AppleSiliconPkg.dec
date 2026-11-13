@@ -1,0 +1,52 @@
+## @file
+#  Code that is common to Apple silicon machines and not tied to one chip:
+#  the entry from m1n1, the Apple device tree reader, the framebuffer, the
+#  embedded ramdisk, SMBIOS and the serial port library.
+#
+#  Taken from NT-for-ASi/apple_silicon_platforms_mu (861dcc490c56),
+#  Silicon/Apple/AppleSiliconPkg. Only the declarations the kept modules use
+#  remain. See README.md in this directory and LICENSE.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  DEC_SPECIFICATION              = 0x00010005
+  PACKAGE_NAME                   = AppleSiliconPkg
+  PACKAGE_GUID                   = 370eccba-e496-426b-b012-013496b3915a
+  PACKAGE_VERSION                = 1.0
+
+[Includes.common]
+  Include
+
+[LibraryClasses]
+  AppleDTLib|Include/Library/AppleDTLib.h
+
+[Guids.common]
+  gAppleSiliconPkgTokenSpaceGuid = { 0xdac05d5e, 0x6b59, 0x4731, { 0x83, 0xf4, 0xfb, 0x40, 0x05, 0xb5, 0xcc, 0xdc } }
+  gAppleSiliconPkgEmbeddedRamdiskGuid = { 0x650b7cd0, 0x94f8, 0x46cc, { 0x88, 0xde, 0x8c, 0x19, 0x9d, 0x41, 0xed, 0xa3} }
+
+[PcdsFixedAtBuild.common]
+  gAppleSiliconPkgTokenSpaceGuid.PcdAppleUartBase|0|UINT64|0x00003900
+  gAppleSiliconPkgTokenSpaceGuid.PcdInitializeRamdisk|FALSE|BOOLEAN|0x00003902
+
+  # RAM reserved for the firmware itself (128 MB)
+  gAppleSiliconPkgTokenSpaceGuid.PcdSystemMemoryUefiRegionSize|0x8000000|UINT32|0x00004404
+
+  gAppleSiliconPkgTokenSpaceGuid.PcdSecPhaseStackBase|0x0|UINT64|0x0000440b
+  gAppleSiliconPkgTokenSpaceGuid.PcdSecPhaseStackSize|0x80000|UINT32|0x00004405
+
+  gAppleSiliconPkgTokenSpaceGuid.PcdFrameBufferWidth|1920|UINT32|0x00004401
+  gAppleSiliconPkgTokenSpaceGuid.PcdFrameBufferHeight|1080|UINT32|0x00004402
+
+  # Where the entry code copies the Apple device tree and the boot arguments
+  gAppleSiliconPkgTokenSpaceGuid.PcdAdtPointer|0|UINT64|0x00003901
+  gAppleSiliconPkgTokenSpaceGuid.PcdBootArgsPointer|0|UINT64|0x00003905
+
+[PcdsPatchableInModule.common]
+  # Filled in by the entry code from the boot arguments
+  gAppleSiliconPkgTokenSpaceGuid.PcdFrameBufferAddress|0x0|UINT64|0x00004400
+  gAppleSiliconPkgTokenSpaceGuid.PcdFrameBufferSize|0x0|UINT64|0x00004410
+
+[PcdsPatchableInModule.common, PcdsFixedAtBuild.common]
+  gAppleSiliconPkgTokenSpaceGuid.PcdCoreCount|1|UINT32|0x00004406

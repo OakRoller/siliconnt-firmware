@@ -1,0 +1,6 @@
+/Build/
+/Conf/
+/.venv/
+*_extdep/
+__pycache__/
+*.pyc
