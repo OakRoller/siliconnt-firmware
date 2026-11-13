@@ -10,6 +10,7 @@ GCC_ASM_IMPORT(CEntryPoint)
 GCC_ASM_EXPORT(_ModuleEntryPoint)
 GCC_ASM_IMPORT (ArmEnableInstructionCache)
 GCC_ASM_IMPORT (ArmEnableDataCache)
+GCC_ASM_IMPORT (ArmEnableVFP)
 GCC_ASM_IMPORT(InitializeUART)
 GCC_ASM_IMPORT(UARTRelocationDebugMessage)
 
@@ -34,6 +35,16 @@ ASM_FUNC(_ModuleEntryPoint)
   sub   x9, x9, x8
   add   x9, x9, x1
   mov   sp, x9
+
+  //
+  // SiliconNT: the loop that clears the stack below uses SIMD registers, and
+  // nothing has enabled them. CPACR_EL1.FPEN is UNKNOWN after a reset (Arm
+  // DDI 0487 M.d, D24.2.35) and the EL2 layer does not write it for the guest.
+  // ArmEnableVFP is a leaf routine that changes x0-x2 only; all three were
+  // saved above and are restored before DiscoverDramFromDt.
+  //
+  bl    ASM_PFX(ArmEnableVFP)
+  isb
 
   //Use ADT to discover usable DRAM base/size
   bl ASM_PFX(InitializeUART)
