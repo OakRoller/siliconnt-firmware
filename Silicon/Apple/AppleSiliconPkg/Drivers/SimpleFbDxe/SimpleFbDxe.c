@@ -173,7 +173,7 @@ SimpleFbDxeInitialize(
 
   
   
-  struct boot_args *BootArgs = (struct boot_args *)FixedPcdGet64(PcdBootArgsPointer);
+  struct boot_args *BootArgs = AppleGetBootInfo()->BootArgs;
   UINT64 FramebufferAddr   = BootArgs->video.base;
   UINT32 FramebufferWidth  = BootArgs->video.width;
   UINT32 FramebufferHeight = BootArgs->video.height;

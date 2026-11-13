@@ -97,12 +97,6 @@
   # Ten cores: 0-5 efficiency, 6-9 performance, 6 is the boot core
   gAppleSiliconPkgTokenSpaceGuid.PcdCoreCount|10
 
-  # Fixed places the entry code copies the boot arguments and the device tree to.
-  # Inherited from the M2 Pro values of NTASP; not checked on the M4.
-  gAppleSiliconPkgTokenSpaceGuid.PcdSecPhaseStackBase|0x10300000000
-  gAppleSiliconPkgTokenSpaceGuid.PcdBootArgsPointer|0x10220000000
-  gAppleSiliconPkgTokenSpaceGuid.PcdAdtPointer|0x10220004000
-
   gAppleSiliconPkgTokenSpaceGuid.PcdSystemMemoryUefiRegionSize|0x8000000
   # No ramdisk image is embedded yet
   gAppleSiliconPkgTokenSpaceGuid.PcdInitializeRamdisk|FALSE

@@ -51,6 +51,7 @@
 [Guids]
   gEfiSystemNvDataFvGuid
   gEfiVariableGuid
+  gAppleSiliconPkgBootInfoHobGuid
 
 [Pcd]
 
@@ -75,8 +76,4 @@
 
   gAppleSiliconPkgTokenSpaceGuid.PcdSystemMemoryUefiRegionSize
   gEmbeddedTokenSpaceGuid.PcdPrePiCpuIoSize
-  gAppleSiliconPkgTokenSpaceGuid.PcdSecPhaseStackBase
   gAppleSiliconPkgTokenSpaceGuid.PcdSecPhaseStackSize
-
-  gAppleSiliconPkgTokenSpaceGuid.PcdAdtPointer
-  gAppleSiliconPkgTokenSpaceGuid.PcdBootArgsPointer

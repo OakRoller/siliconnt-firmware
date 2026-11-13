@@ -41,6 +41,5 @@
   HobLib
   CompilerIntrinsicsLib
 
-[Pcd.common]
-  gAppleSiliconPkgTokenSpaceGuid.PcdAdtPointer
-  gAppleSiliconPkgTokenSpaceGuid.PcdBootArgsPointer
+[Guids]
+  gAppleSiliconPkgBootInfoHobGuid

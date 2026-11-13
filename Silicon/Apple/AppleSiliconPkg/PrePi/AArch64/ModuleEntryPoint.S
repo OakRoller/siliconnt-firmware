@@ -19,6 +19,22 @@ ASM_FUNC(_ModuleEntryPoint)
   mov x27, x0
   mov x26, x1
   mov x25, x0 //boot args addr (SiliconNT: the EL2 layer passes it in x0)
+
+  //
+  // SiliconNT: the EL2 layer enters the image with SP_EL1 = 0 (m1n1,
+  // src/hv/hv_asm.S, hv_enter_guest), and the next call is into C. Until the
+  // real stack is set up below, use the window between the image header and
+  // the firmware volume, the same one DiscoverDramFromDt switches to.
+  // x1 = load address of the image, left there by the header.
+  //
+  adr   x8, PcdGet64 (PcdFdBaseAddress)
+  adr   x9, PcdGet64 (PcdFvBaseAddress)
+  ldr   x8, [x8]
+  ldr   x9, [x9]
+  sub   x9, x9, x8
+  add   x9, x9, x1
+  mov   sp, x9
+
   //Use ADT to discover usable DRAM base/size
   bl ASM_PFX(InitializeUART)
   //restore values
@@ -119,7 +135,7 @@ _EnableCaches:
 _PrepareArgumentsAndJump:
   mov x0, x12 //Stack Base
   mov x1, x2  //Stack Size
-  mov x2, x26 //DeviceTree pointer
+  mov x2, x25 //boot args addr
   mov x3, x22 //UEFI memory base
 
   ldr x4, =ASM_PFX(CEntryPoint)
@@ -134,21 +150,11 @@ _NeverReturn:
 
 // VOID
 // DiscoverDramFromDt (
-//   VOID   *DeviceTreeBaseAddress,   // passed by loader in x0
+//   VOID   *BootArgs,                // passed by the EL2 layer in x0
 //   VOID   *ImageBase                // passed by FDF trampoline in x1
 //   );
 ASM_PFX(DiscoverDramFromDt):
-  //
-  // If we are booting from RAM using the Linux kernel boot protocol, x0 will
-  // point to the DTB image in memory. Otherwise, use the default value defined
-  // by the platform.
-  //
-  cbnz  x0, 0f
-  ldr   x0, =PcdGet64 (PcdAdtPointer)
-  ldr   x0, [x0]
-
-0:mov   x28, x30            // preserve LR
-  mov   x27, x0             // preserve FDT pointer
+  mov   x28, x30            // preserve LR
   mov   x26, x1             // preserve base of image addr
 
   //
@@ -187,27 +193,19 @@ ASM_PFX(DiscoverDramFromDt):
   bl    RelocatePeCoffImage
 
   //
-  // Discover the memory size and offset from the DTB, and record in the
-  // respective PCDs. This will also return false if a corrupt DTB is
-  // encountered.
+  // Take the memory base and size and the framebuffer from the boot
+  // arguments, and record them in the respective PCDs. Does not return if
+  // the device tree the boot arguments point to is corrupt.
   //
-
+  // SiliconNT: the boot arguments and the device tree stay where the loader
+  // put them. Main() reserves the two ranges and publishes their addresses
+  // in a HOB (PrePi.c, PublishBootInfo).
   //
-  // Copy the ADT to a predefined location (cannot put it in FDF slack space due to how m1n1 does memory reservation)
-  // guaranteed to never be allocated until OS boot (at which point this is no longer relevant)
-  // and record the pointer in PcdAdtPointer.
-  // TODO - if there's a location that's more suitable that doesn't depend on hardcoding values, use it.
-  //
-
-
   mov   x0, x25 //boot args addr
   adr   x1, PcdGet64 (PcdSystemMemoryBase)
   adr   x2, PcdGet64 (PcdSystemMemorySize)
-  MOV64 (x3, FixedPcdGet64(PcdBootArgsPointer))
-  MOV64 (x4, FixedPcdGet64(PcdAdtPointer))
 
   bl    EarlySetup
-  cbz   x0, .Lout
 
 .Lout:
   ret    x28

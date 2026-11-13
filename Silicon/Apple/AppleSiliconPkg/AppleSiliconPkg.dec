@@ -25,6 +25,9 @@
 [Guids.common]
   gAppleSiliconPkgTokenSpaceGuid = { 0xdac05d5e, 0x6b59, 0x4731, { 0x83, 0xf4, 0xfb, 0x40, 0x05, 0xb5, 0xcc, 0xdc } }
   gAppleSiliconPkgEmbeddedRamdiskGuid = { 0x650b7cd0, 0x94f8, 0x46cc, { 0x88, 0xde, 0x8c, 0x19, 0x9d, 0x41, 0xed, 0xa3} }
+  # SiliconNT: HOB with the addresses of the boot arguments and the Apple device
+  # tree (APPLE_BOOT_INFO in Include/Library/AppleDTLib.h), built by PrePi
+  gAppleSiliconPkgBootInfoHobGuid = { 0x780a28a9, 0xa35f, 0x4dfd, { 0x89, 0x43, 0xe9, 0xf9, 0x80, 0x49, 0x9a, 0xa0 } }
 
 [PcdsFixedAtBuild.common]
   gAppleSiliconPkgTokenSpaceGuid.PcdAppleUartBase|0|UINT64|0x00003900
@@ -33,15 +36,10 @@
   # RAM reserved for the firmware itself (128 MB)
   gAppleSiliconPkgTokenSpaceGuid.PcdSystemMemoryUefiRegionSize|0x8000000|UINT32|0x00004404
 
-  gAppleSiliconPkgTokenSpaceGuid.PcdSecPhaseStackBase|0x0|UINT64|0x0000440b
   gAppleSiliconPkgTokenSpaceGuid.PcdSecPhaseStackSize|0x80000|UINT32|0x00004405
 
   gAppleSiliconPkgTokenSpaceGuid.PcdFrameBufferWidth|1920|UINT32|0x00004401
   gAppleSiliconPkgTokenSpaceGuid.PcdFrameBufferHeight|1080|UINT32|0x00004402
-
-  # Where the entry code copies the Apple device tree and the boot arguments
-  gAppleSiliconPkgTokenSpaceGuid.PcdAdtPointer|0|UINT64|0x00003901
-  gAppleSiliconPkgTokenSpaceGuid.PcdBootArgsPointer|0|UINT64|0x00003905
 
 [PcdsPatchableInModule.common]
   # Filled in by the entry code from the boot arguments

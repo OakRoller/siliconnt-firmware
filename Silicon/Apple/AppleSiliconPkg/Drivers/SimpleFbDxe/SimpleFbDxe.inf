@@ -43,9 +43,6 @@
 [Guids]
   gEfiMdeModulePkgTokenSpaceGuid
 
-[Pcd]
-  gAppleSiliconPkgTokenSpaceGuid.PcdBootArgsPointer
-
 [Depex]
   gEfiCpuArchProtocolGuid
 

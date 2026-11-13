@@ -10,15 +10,15 @@ That repository is not an upstream of this one: updates are not followed.
 
 | Here | What | Changed |
 |---|---|---|
-| `PrePi/` | Entry from m1n1, hand-off blocks, jump to the DXE core | The boot arguments address is taken from `x0` instead of `x4`. The non-relocating entry file was not taken. `LzmaDecompressLib` removed from the module's library list (the platform build links the LZMA library explicitly) |
-| `Library/AppleDTLib/` | Apple device tree reader (from pongoOS) | — |
+| `PrePi/` | Entry from m1n1, hand-off blocks, jump to the DXE core | The boot arguments address is taken from `x0` instead of `x4`. The entry code sets a stack before its first call into C (the EL2 layer enters with `SP_EL1` = 0). The boot arguments and the device tree are no longer copied to two fixed addresses: they stay where the loader put them, `Main()` reserves both ranges and publishes their addresses in a HOB (`gAppleSiliconPkgBootInfoHobGuid`). A corrupt device tree stops the entry code instead of letting it go on with build-time memory defaults. The non-relocating entry file was not taken. `LzmaDecompressLib` removed from the module's library list (the platform build links the LZMA library explicitly) |
+| `Library/AppleDTLib/` | Apple device tree reader (from pongoOS) | `dt_get()` and `dt_node_parent()` take the device tree address from that HOB instead of a fixed PCD; `AppleGetBootInfo()` added |
 | `Library/AppleUartSerialPortLib/` | Samsung-style serial port | — |
 | `Library/PlatformPeiLib/` | Publishes the firmware volume | — |
-| `Drivers/SimpleFbDxe/` | Framebuffer left by iBoot and m1n1 | — |
+| `Drivers/SimpleFbDxe/` | Framebuffer left by iBoot and m1n1 | The boot arguments address comes from `AppleGetBootInfo()` instead of a fixed PCD |
 | `Drivers/BootRamdiskHelperDxe/` | Registers a ramdisk embedded in the image | — |
 | `Drivers/SmbiosInfoDxe/` | SMBIOS tables | The Mu version library and two unused package references removed, with the two calls that wrote the version and date into string literals |
 | `AppleSiliconFdfRules.fdf.inc` | Image build rules | — |
-| `AppleSiliconPkg.dec` | Package declaration | Cut down to what the files above use |
+| `AppleSiliconPkg.dec` | Package declaration | Cut down to what the files above use. `PcdAdtPointer`, `PcdBootArgsPointer` and `PcdSecPhaseStackBase` removed, the HOB GUID added |
 
 Line endings were converted to LF.
 
