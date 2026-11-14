@@ -332,6 +332,52 @@ APPLE_BOOT_INFO* AppleGetBootInfo(VOID)
     return (APPLE_BOOT_INFO *)GET_GUID_HOB_DATA(Hob);
 }
 
+// SiliconNT: the boot disk image the loader describes in the device tree; see AppleDTLib.h
+RETURN_STATUS AppleGetBootRamdisk(IN CONST APPLE_BOOT_INFO *Info, OUT UINT64 *Base, OUT UINT64 *Size)
+{
+    dt_node_t     *MemoryMap;
+    VOID          *Value;
+    size_t        Length = 0;
+    struct memmap Entry;
+    UINT64        MemoryBase = Info->BootArgs->phys_base;
+    UINT64        MemorySize = Info->BootArgs->mem_size;
+
+    *Base = 0;
+    *Size = 0;
+
+    MemoryMap = dt_find(Info->DeviceTree, "/chosen/memory-map");
+    if(MemoryMap == NULL)
+    {
+        return RETURN_NOT_FOUND;
+    }
+    Value = dt_prop(MemoryMap, "RAMDisk", &Length);
+    if(Value == NULL)
+    {
+        return RETURN_NOT_FOUND;
+    }
+    if(Length != sizeof(Entry))
+    {
+        return RETURN_INVALID_PARAMETER;
+    }
+
+    // Property values are aligned to 4 bytes only
+    CopyMem(&Entry, Value, sizeof(Entry));
+    *Base = Entry.addr;
+    *Size = Entry.size;
+
+    if(Entry.size == 0 || (Entry.addr & EFI_PAGE_MASK) != 0 || (Entry.size & EFI_PAGE_MASK) != 0)
+    {
+        return RETURN_INVALID_PARAMETER;
+    }
+    // Written so that neither side can wrap around
+    if(Entry.addr < MemoryBase || Entry.addr - MemoryBase >= MemorySize || Entry.size > MemorySize - (Entry.addr - MemoryBase))
+    {
+        return RETURN_INVALID_PARAMETER;
+    }
+
+    return RETURN_SUCCESS;
+}
+
 void* dt_node_prop(dt_node_t *node, const char *prop, size_t *size)
 {
     void *val = dt_prop(node, prop, size);

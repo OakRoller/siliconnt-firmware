@@ -129,4 +129,20 @@ typedef struct
 
 APPLE_BOOT_INFO* AppleGetBootInfo(VOID);
 
+//
+// SiliconNT: the boot disk. The loader may put a disk image into memory; it
+// then describes it in the "RAMDisk" property of /chosen/memory-map: base and
+// size, two 64-bit values, like that node's "DeviceTree" and "BootArgs".
+//
+// RETURN_SUCCESS            *Base and *Size describe the image.
+// RETURN_NOT_FOUND          There is no such property: no boot disk.
+// RETURN_INVALID_PARAMETER  The property is there and cannot be used: it is not
+//                           16 bytes long, the size is 0, base or size is not a
+//                           multiple of the page size, or the range is not
+//                           inside the memory the boot arguments describe.
+//                           *Base and *Size hold what the property says, or 0
+//                           if it is not 16 bytes long.
+//
+RETURN_STATUS AppleGetBootRamdisk(IN CONST APPLE_BOOT_INFO *Info, OUT UINT64 *Base, OUT UINT64 *Size);
+
 #endif /* APPLEDTLIB_H */

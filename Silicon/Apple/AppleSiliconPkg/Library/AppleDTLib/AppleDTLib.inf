@@ -36,6 +36,7 @@
 
 [LibraryClasses]
   ArmLib
+  BaseMemoryLib
   PcdLib
   IoLib
   HobLib
