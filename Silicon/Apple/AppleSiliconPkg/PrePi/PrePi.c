@@ -52,6 +52,42 @@ STATIC VOID ReserveLoaderRange(IN UINT64 Base, IN UINT64 Size)
 }
 
 //
+// SiliconNT: the boot disk image, if the loader put one into memory and named it
+// in the device tree, also stays where it is. BootRamdiskHelperDxe registers that
+// memory as a RAM disk; here it is only kept away from the DXE core's allocator.
+//
+// An entry that cannot be used stops the entry code, like a corrupt device tree.
+// Going on would mean either handing the image's memory out as free memory or
+// ending up in the UEFI Shell with the reason several hundred lines up the log.
+//
+STATIC VOID ReserveBootRamdisk(IN CONST APPLE_BOOT_INFO *Info)
+{
+    UINT64        Base;
+    UINT64        Size;
+    RETURN_STATUS Status;
+
+    Status = AppleGetBootRamdisk(Info, &Base, &Size);
+    if(Status == RETURN_NOT_FOUND) {
+        DEBUG((EFI_D_INFO | EFI_D_LOAD, "No boot disk image: /chosen/memory-map has no RAMDisk entry\n"));
+        return;
+    }
+    if(RETURN_ERROR(Status)) {
+        DEBUG(
+            (EFI_D_INFO | EFI_D_LOAD | EFI_D_ERROR,
+            "PrePi: bad RAMDisk entry in /chosen/memory-map: base 0x%llx, size 0x%llx\n",
+            Base, Size));
+        DEBUG(
+            (EFI_D_INFO | EFI_D_LOAD | EFI_D_ERROR,
+            "It must be 16 bytes long, page aligned, not empty and inside memory (0x%llx, size 0x%llx); stopping here\n",
+            Info->BootArgs->phys_base, Info->BootArgs->mem_size));
+        CpuDeadLoop();
+    }
+
+    DEBUG((EFI_D_INFO | EFI_D_LOAD, "Boot disk image: 0x%llx (size 0x%llx)\n", Base, Size));
+    ReserveLoaderRange(Base, Size);
+}
+
+//
 // SiliconNT: the boot arguments and the Apple device tree stay where the loader
 // put them. Reserve both and tell the DXE drivers where they are
 // (AppleGetBootInfo() in AppleDTLib reads this HOB).
@@ -73,6 +109,7 @@ STATIC VOID PublishBootInfo(IN struct boot_args *BootArgs)
 
     ReserveLoaderRange((UINTN)Info.BootArgs, sizeof(struct boot_args));
     ReserveLoaderRange((UINTN)Info.DeviceTree, Info.DeviceTreeSize);
+    ReserveBootRamdisk(&Info);
 }
 
 VOID Main(IN VOID *StackBase, IN UINTN StackSize, IN VOID *BootArgsPtr, IN UINT64 UefiMemoryBase)
