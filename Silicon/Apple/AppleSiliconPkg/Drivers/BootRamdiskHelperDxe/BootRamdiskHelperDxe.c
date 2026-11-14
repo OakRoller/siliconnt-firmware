@@ -1,14 +1,19 @@
 /**
  * @file BootRamdiskHelperDxe.c
  * @author amarioguy (Arminder Singh)
- * 
- * Sets up an embedded RAMDisk in the FV. For right now this is primarily used to bring up WinPE.
- * 
+ *
+ * Registers the boot disk image the loader left in memory as a RAM disk.
+ *
  * @version 1.0
  * @date 2022-12-25
- * 
+ *
  * @copyright Copyright (c) amarioguy (Arminder Singh), 2022.
- * 
+ *
+ * SiliconNT: the image is no longer a file embedded in the firmware volume and
+ * copied to the heap. The loader puts it into memory and names the range in the
+ * "RAMDisk" property of the device tree node /chosen/memory-map; the entry code
+ * (PrePi) has reserved that range, and it is registered here where it is.
+ *
  */
 
 #include <PiDxe.h>
@@ -16,19 +21,18 @@
 #include "BootRamdiskHelperDxe.h"
 
 /**
- * @brief Main function for RAMDisk initialization.
- * 
- * Note that we only allocate a RAMDisk with a boot image here if we are told to do so and actually have the file embedded in the FV.
- * 
- * @param ImageHandle 
- * @param SystemTable 
+ * @brief Registers the memory the device tree names as the boot disk with RamDiskDxe.
+ *
+ * Nothing is copied and nothing is allocated for the image: reads and writes of
+ * the RAM disk go to the memory the loader filled.
+ *
+ * @param ImageHandle
+ * @param SystemTable
  * @return
- * 
- * EFI_SUCCESS - we initialized the RAMDisk as a bootable device.
- * EFI_UNSUPPORTED - we are configured not to set up the RAMDisk.
- * EFI_NOT_FOUND - no FV embedded candidate image is present.
- * EFI_OUT_OF_RESOURCES - for some reason, we are out of memory and cannot create the ramdisk.
- * EFI_ABORTED - an unexpected error occurred.
+ *
+ * EFI_SUCCESS - the RAM disk is registered, or the device tree names no boot disk.
+ * EFI_INVALID_PARAMETER - the device tree entry cannot be used (the entry code stops on that, so this is not expected here).
+ * Others - the RAM disk protocol was not found, or it refused the range.
  */
 EFI_STATUS
 EFIAPI
@@ -38,45 +42,33 @@ BootRamdiskHelperDxeInitialize (
   )
 {
     EFI_STATUS Status;
-    BOOLEAN RamdiskBootConfigured;
-    VOID *OriginalRamDiskPtr;
-    VOID *DestinationRamdiskPtr;
-    UINTN RamDiskSize;
-    EFI_GUID *RamDiskRegisterType = &gEfiVirtualDiskGuid; //hardcode to IMG image for now
+    UINT64 RamDiskBase;
+    UINT64 RamDiskSize;
     EFI_RAM_DISK_PROTOCOL *RamdiskProtocol;
     EFI_DEVICE_PATH_PROTOCOL *DevicePath;
 
-    DEBUG((DEBUG_INFO, "BootRamdiskHelperDxe started\n"));
-    // Before proceeding to RAMDisk creation, check that we're configured to do so
-    // and that we have a candidate image with which to create said RAMDisk.
-    RamdiskBootConfigured = PcdGetBool(PcdInitializeRamdisk);
-    if(!RamdiskBootConfigured) {
-        DEBUG((DEBUG_ERROR, "BootRamdiskHelperDxe - FV not configured for ramdisk boot, exiting\n"));
-        return EFI_UNSUPPORTED;
+    Status = AppleGetBootRamdisk(AppleGetBootInfo(), &RamDiskBase, &RamDiskSize);
+    if (Status == EFI_NOT_FOUND) {
+        DEBUG((DEBUG_INFO, "BootRamdiskHelperDxe: no RAMDisk entry in /chosen/memory-map, no boot disk\n"));
+        return EFI_SUCCESS;
     }
-    Status = GetSectionFromAnyFv(&gAppleSiliconPkgEmbeddedRamdiskGuid, EFI_SECTION_RAW, 0, &OriginalRamDiskPtr, &RamDiskSize);
-    if(EFI_ERROR(Status)) {
-        DEBUG((DEBUG_ERROR, "BootRamdiskHelperDxe - no FV embedded ramdisk, exiting\n"));
-        return EFI_NOT_FOUND;
+    if (EFI_ERROR (Status)) {
+        DEBUG((DEBUG_ERROR, "BootRamdiskHelperDxe: bad RAMDisk entry in /chosen/memory-map: base 0x%llx, size 0x%llx\n", RamDiskBase, RamDiskSize));
+        return Status;
     }
-
-    ASSERT (OriginalRamDiskPtr != NULL);
-    ASSERT (RamDiskSize != 0);
-    //copy the RAMDisk to a new scratch location
-    DestinationRamdiskPtr = AllocateCopyPool(RamDiskSize, OriginalRamDiskPtr);
-
-    ASSERT (DestinationRamdiskPtr != NULL);
 
     Status = gBS->LocateProtocol(&gEfiRamDiskProtocolGuid, NULL, (VOID **)&RamdiskProtocol);
     if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "BootRamdiskHelperDxe: Couldn't find the RAMDisk protocol - %r\n", Status));
         return Status;
     }
-    Status = RamdiskProtocol->Register((UINTN)DestinationRamdiskPtr, (UINT64)RamDiskSize, RamDiskRegisterType, NULL, &DevicePath);
+    // DevicePath belongs to RamDiskDxe from here on; it frees it when the disk is unregistered
+    Status = RamdiskProtocol->Register(RamDiskBase, RamDiskSize, &gEfiVirtualDiskGuid, NULL, &DevicePath);
     if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "BootRamdiskHelperDxe: Cannot register RAM Disk - %r\n", Status));
+        DEBUG ((DEBUG_ERROR, "BootRamdiskHelperDxe: Cannot register RAM Disk at 0x%llx (size 0x%llx) - %r\n", RamDiskBase, RamDiskSize, Status));
+        return Status;
     }
 
-    return Status;
-
+    DEBUG((DEBUG_INFO, "BootRamdiskHelperDxe: boot disk registered in place, 0x%llx (size 0x%llx)\n", RamDiskBase, RamDiskSize));
+    return EFI_SUCCESS;
 }

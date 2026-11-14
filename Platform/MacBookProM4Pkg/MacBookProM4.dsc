@@ -98,8 +98,6 @@
   gAppleSiliconPkgTokenSpaceGuid.PcdCoreCount|10
 
   gAppleSiliconPkgTokenSpaceGuid.PcdSystemMemoryUefiRegionSize|0x8000000
-  # No ramdisk image is embedded yet
-  gAppleSiliconPkgTokenSpaceGuid.PcdInitializeRamdisk|FALSE
 
   gEmbeddedTokenSpaceGuid.PcdMemoryTypeEfiRuntimeServicesData|300
   gEmbeddedTokenSpaceGuid.PcdMemoryTypeEfiRuntimeServicesCode|150
@@ -348,7 +346,8 @@
       gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
   }
 
-  # Disks: only the ramdisk embedded in the firmware image
+  # Disks: only the RAM disk over the boot disk image the loader leaves in memory
+  # (the "RAMDisk" entry of /chosen/memory-map in the Apple device tree)
   MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf
   MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf

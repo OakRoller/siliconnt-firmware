@@ -17,10 +17,10 @@ That repository is not an upstream of this one: updates are not followed.
 | `Library/AppleUartSerialPortLib/` | Samsung-style serial port | `SerialPortWrite()` returns the number of bytes written; it returned 0, which `SerialDxe` takes for a timeout |
 | `Library/PlatformPeiLib/` | Publishes the firmware volume | — |
 | `Drivers/SimpleFbDxe/` | Framebuffer left by iBoot and m1n1 | The boot arguments address comes from `AppleGetBootInfo()` instead of a fixed PCD |
-| `Drivers/BootRamdiskHelperDxe/` | Registers a ramdisk embedded in the image | — |
+| `Drivers/BootRamdiskHelperDxe/` | Registers the boot disk image as a RAM disk | The image is no longer a file embedded in the firmware volume and copied to the heap when `PcdInitializeRamdisk` is set. The driver takes base and size from the device tree (`AppleGetBootRamdisk()`) and registers that memory where it is. Without a `RAMDisk` entry it prints one line and registers nothing. Library, protocol and GUID lists cut down to what is used |
 | `Drivers/SmbiosInfoDxe/` | SMBIOS tables | The Mu version library and two unused package references removed, with the two calls that wrote the version and date into string literals |
 | `AppleSiliconFdfRules.fdf.inc` | Image build rules | — |
-| `AppleSiliconPkg.dec` | Package declaration | Cut down to what the files above use. `PcdAdtPointer`, `PcdBootArgsPointer` and `PcdSecPhaseStackBase` removed, the HOB GUID added |
+| `AppleSiliconPkg.dec` | Package declaration | Cut down to what the files above use. `PcdAdtPointer`, `PcdBootArgsPointer` and `PcdSecPhaseStackBase` removed, the HOB GUID added. `PcdInitializeRamdisk` and `gAppleSiliconPkgEmbeddedRamdiskGuid` removed with the embedded ramdisk |
 
 Line endings were converted to LF.
 
