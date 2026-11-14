@@ -94,8 +94,12 @@ UINTN EFIAPI SerialPortWrite(IN UINT8 *Buffer, IN UINTN NumberOfBytes)
     return NumberOfBytesToTransmit;
 }
 
-// currently, we won't need to read from the UART (no debug console)
-// if this changes, this function will need to be filled out
+//
+// SiliconNT: the firmware only writes to this port. Its receive direction belongs
+// to the Windows kernel debugger: a byte the firmware took out of the receive
+// register would be missing from a debugger packet. SerialPortRead() and
+// SerialPortPoll() report "no data" without touching the port.
+//
 
 /**
   Read data from serial device and save the datas in buffer.
@@ -118,11 +122,7 @@ UINTN EFIAPI SerialPortRead(
     IN UINTN NumberOfBytes
     )
 {
-    UINTN  Count;
-    for (Count = 0; (Count < NumberOfBytes) && SerialPortPoll (); Count++, Buffer++) {
-      *Buffer = MmioRead32 (UART_BASE + UART_RX_BYTE);
-    }
-    return Count;
+    return 0;
 }
 
 /*
@@ -159,7 +159,7 @@ UINTN SerialPortFlush(VOID)
 
 BOOLEAN EFIAPI SerialPortPoll(VOID)
 {
-    return (MmioRead32(UART_BASE + UART_TRANSFER_STATUS) & UART_TRANSFER_STATUS_RXD) ? TRUE : FALSE;
+    return FALSE;
 }
 
 /**
