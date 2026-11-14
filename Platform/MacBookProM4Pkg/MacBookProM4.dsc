@@ -339,6 +339,10 @@
       HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
       BcfgCommandLib|ShellPkg/Library/UefiShellBcfgCommandLib/UefiShellBcfgCommandLib.inf
       AcpiViewCommandLib|ShellPkg/Library/UefiShellAcpiViewCommandLib/UefiShellAcpiViewCommandLib.inf
+    <PcdsFixedAtBuild>
+      # The Shell installs the protocols ShellLib would look for; without this its
+      # constructor fails with Not Found inside the Shell itself
+      gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
   }
 
   # Disks: only the ramdisk embedded in the firmware image

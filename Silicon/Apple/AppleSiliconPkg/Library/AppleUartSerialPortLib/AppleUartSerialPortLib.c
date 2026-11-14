@@ -84,10 +84,14 @@ UINTN EFIAPI SerialPortWrite(IN UINT8 *Buffer, IN UINTN NumberOfBytes)
 
         }
         MmioWrite32((UART_BASE + UART_TX_BYTE), Buffer[i]);
-        NumberOfBytes--;
     }
     ArmEnableInterrupts();
-    return NumberOfBytes;
+    //
+    // SiliconNT: return the number of bytes written. The loop used to count
+    // NumberOfBytes down and return what was left, 0; SerialDxe takes anything
+    // but the full count for a timeout, so no console text reached the port.
+    //
+    return NumberOfBytesToTransmit;
 }
 
 // currently, we won't need to read from the UART (no debug console)

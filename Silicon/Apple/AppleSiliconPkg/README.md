@@ -12,7 +12,7 @@ That repository is not an upstream of this one: updates are not followed.
 |---|---|---|
 | `PrePi/` | Entry from m1n1, hand-off blocks, jump to the DXE core | The boot arguments address is taken from `x0` instead of `x4`. The entry code sets a stack before its first call into C (the EL2 layer enters with `SP_EL1` = 0). It also enables FP/SIMD access (`ArmEnableVFP`) before the stack clearing loop that uses SIMD registers: nothing guarantees `CPACR_EL1.FPEN` on entry. The boot arguments and the device tree are no longer copied to two fixed addresses: they stay where the loader put them, `Main()` reserves both ranges and publishes their addresses in a HOB (`gAppleSiliconPkgBootInfoHobGuid`). A corrupt device tree stops the entry code instead of letting it go on with build-time memory defaults. The non-relocating entry file was not taken. `LzmaDecompressLib` removed from the module's library list (the platform build links the LZMA library explicitly) |
 | `Library/AppleDTLib/` | Apple device tree reader (from pongoOS) | `dt_get()` and `dt_node_parent()` take the device tree address from that HOB instead of a fixed PCD; `AppleGetBootInfo()` added |
-| `Library/AppleUartSerialPortLib/` | Samsung-style serial port | — |
+| `Library/AppleUartSerialPortLib/` | Samsung-style serial port | `SerialPortWrite()` returns the number of bytes written; it returned 0, which `SerialDxe` takes for a timeout |
 | `Library/PlatformPeiLib/` | Publishes the firmware volume | — |
 | `Drivers/SimpleFbDxe/` | Framebuffer left by iBoot and m1n1 | The boot arguments address comes from `AppleGetBootInfo()` instead of a fixed PCD |
 | `Drivers/BootRamdiskHelperDxe/` | Registers a ramdisk embedded in the image | — |
