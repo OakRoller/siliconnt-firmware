@@ -293,6 +293,9 @@
   # of ID_AA64PFR0_EL1, which is 0 on the M4 (SiliconNT docs/DESIGN.md, "固件")
   ArmPkg/Drivers/ArmGicDxe/ArmGicV3Dxe.inf
   ArmPkg/Drivers/TimerDxe/TimerDxe.inf
+  # What the DXE core of the pinned mu_basecore sleeps through when it is idle; nothing
+  # else here produces it (SiliconNT docs/findings/0023)
+  MacBookProM4Pkg/Drivers/Cpu2Dxe/Cpu2Dxe.inf
 
   # Architectural protocols
   MdeModulePkg/Core/RuntimeDxe/RuntimeDxe.inf

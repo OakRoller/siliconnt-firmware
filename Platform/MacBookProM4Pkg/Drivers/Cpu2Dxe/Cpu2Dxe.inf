@@ -1,0 +1,34 @@
+## @file
+#  Produces EFI_CPU2_PROTOCOL, which the DXE core of the pinned mu_basecore uses to
+#  put the processor to sleep when it has nothing to do. See Cpu2Dxe.c.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = Cpu2Dxe
+  FILE_GUID                      = 1a76fb93-1569-4d95-a509-e407a6e6774d
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = Cpu2DxeInitialize
+
+[Sources.common]
+  Cpu2Dxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ArmPkg/ArmPkg.dec
+
+[LibraryClasses]
+  ArmLib
+  CpuLib
+  DebugLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+
+[Protocols]
+  gEfiCpu2ProtocolGuid  ## PRODUCES
+
+[Depex]
+  TRUE

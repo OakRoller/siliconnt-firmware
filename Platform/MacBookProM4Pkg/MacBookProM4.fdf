@@ -70,6 +70,7 @@ FvNameGuid         = 3f1a6d52-8c0b-4e57-a3d4-71b29c5e0a86
   INF ArmPkg/Drivers/CpuDxe/CpuDxe.inf
   INF ArmPkg/Drivers/ArmGicDxe/ArmGicV3Dxe.inf
   INF ArmPkg/Drivers/TimerDxe/TimerDxe.inf
+  INF MacBookProM4Pkg/Drivers/Cpu2Dxe/Cpu2Dxe.inf
 
   # Architectural protocols
   INF MdeModulePkg/Core/RuntimeDxe/RuntimeDxe.inf
