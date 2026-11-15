@@ -41,20 +41,27 @@ VOID EFIAPI ProcessLibraryConstructorList(VOID);
 
 //
 // SiliconNT: keep a range the loader filled out of the hands of the DXE core.
-// Boot services data: the operating system may reuse it once it has taken over.
+// Type says what the operating system may do with it once it has taken over:
+// boot services data may be reused, reserved memory must be left alone.
 //
-STATIC VOID ReserveLoaderRange(IN UINT64 Base, IN UINT64 Size)
+STATIC VOID ReserveLoaderRange(IN UINT64 Base, IN UINT64 Size, IN EFI_MEMORY_TYPE Type)
 {
     UINT64 Start = Base & ~(UINT64)EFI_PAGE_MASK;
     UINT64 End   = ALIGN_VALUE(Base + Size, (UINT64)EFI_PAGE_SIZE);
 
-    BuildMemoryAllocationHob(Start, End - Start, EfiBootServicesData);
+    BuildMemoryAllocationHob(Start, End - Start, Type);
 }
 
 //
 // SiliconNT: the boot disk image, if the loader put one into memory and named it
 // in the device tree, also stays where it is. BootRamdiskHelperDxe registers that
 // memory as a RAM disk; here it is only kept away from the DXE core's allocator.
+//
+// The range is reserved memory, not boot services data. Windows goes on using the
+// disk after it has taken over: its loader finds the RAM disk node in the boot
+// device path and hands the address to the kernel, which maps the memory as a
+// disk. ACPI 6.6 section 5.2.26.2 asks for EFI reserved memory for a virtual disk
+// range, and RamDiskDxe publishes the disk in the NFIT only when it finds it so.
 //
 // An entry that cannot be used stops the entry code, like a corrupt device tree.
 // Going on would mean either handing the image's memory out as free memory or
@@ -84,7 +91,7 @@ STATIC VOID ReserveBootRamdisk(IN CONST APPLE_BOOT_INFO *Info)
     }
 
     DEBUG((EFI_D_INFO | EFI_D_LOAD, "Boot disk image: 0x%llx (size 0x%llx)\n", Base, Size));
-    ReserveLoaderRange(Base, Size);
+    ReserveLoaderRange(Base, Size, EfiReservedMemoryType);
 }
 
 //
@@ -107,8 +114,8 @@ STATIC VOID PublishBootInfo(IN struct boot_args *BootArgs)
 
     BuildGuidDataHob(&gAppleSiliconPkgBootInfoHobGuid, &Info, sizeof(Info));
 
-    ReserveLoaderRange((UINTN)Info.BootArgs, sizeof(struct boot_args));
-    ReserveLoaderRange((UINTN)Info.DeviceTree, Info.DeviceTreeSize);
+    ReserveLoaderRange((UINTN)Info.BootArgs, sizeof(struct boot_args), EfiBootServicesData);
+    ReserveLoaderRange((UINTN)Info.DeviceTree, Info.DeviceTreeSize, EfiBootServicesData);
     ReserveBootRamdisk(&Info);
 }
 
