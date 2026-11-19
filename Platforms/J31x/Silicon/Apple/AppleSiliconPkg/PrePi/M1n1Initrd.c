@@ -12,6 +12,7 @@
  */
 #include <PiPei.h>
 #include <Library/BaseLib.h>
+#include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Guid/M1n1Initrd.h>
@@ -221,7 +222,20 @@ M1n1InitrdSetup (
     }
   }
 
-  if (!FdtFindInitrd (DeviceTreePtr, &Start, &End)) {
+  CONST struct boot_args *Args = (CONST VOID *)(UINTN)FixedPcdGet64 (PcdBootArgsPointer);
+  struct memmap Disk;
+  size_t Length = 0;
+  dt_node_t *Map = dt_get ("/chosen/memory-map");
+  VOID *Value = Map == NULL ? NULL : dt_prop (Map, "RAMDisk", &Length);
+  if (Value != NULL) {
+    if (Length != sizeof (Disk)) return;
+    CopyMem (&Disk, Value, sizeof (Disk));
+    if (!Disk.size || ((Disk.addr | Disk.size) & EFI_PAGE_MASK) ||
+        Disk.addr < Args->phys_base || Disk.size > Args->mem_size ||
+        Disk.addr - Args->phys_base > Args->mem_size - Disk.size) return;
+    Start = Disk.addr;
+    End = Start + Disk.size;
+  } else if (!FdtFindInitrd (DeviceTreePtr, &Start, &End)) {
     DEBUG ((DEBUG_INFO, "M1n1Initrd: no initramfs in /chosen, skipping\n"));
     return;
   }
