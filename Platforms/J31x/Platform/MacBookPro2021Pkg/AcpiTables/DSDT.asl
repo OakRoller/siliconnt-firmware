@@ -148,34 +148,28 @@
         // Emulated xHCI controller provided by the m1n1 standalone hypervisor (hv_xhci.c): the
         // internal keyboard/trackpad appear behind it as a USB HID device. Window and GSIV must
         // match HV_XHCI_BASE / HV_XHCI_IRQ. Not present when booting without the hypervisor.
+        // The window must be below 4 GB: Windows refuses to start an ACPI device whose memory
+        // resource is a QWordMemory above 4 GB (run 37: STATUS_INVALID_PARAMETER before the
+        // driver runs), while Memory32Fixed works. Below 4 GB this guest has no RAM or MMIO.
         //
         Device(XHC0) {
-            Name(_HID, "PNP0D10") // XHCI-compliant USB controller (usbxhci.inf: ACPI\PNP0D10)
+            // Vendor-style 8-character _HID with the generic id as _CID, the way every ARM64 Windows
+            // machine describes its xHCI (e.g. QCOM0304 + PNP0D10). usbxhci.inf still binds through
+            // the compatible id. Run 40: with the bare _HID "PNP0D10", usbhub3 built the device's
+            // KSE id from the controller's 3-character vendor string and KseQueryDeviceFlags
+            // crashed in the kernel (bugcheck 0x7E) right after the device descriptor was read.
+            Name(_HID, "APPL0D10")
+            Name(_CID, "PNP0D10") // XHCI-compliant USB controller (usbxhci.inf: ACPI\PNP0D10)
             Name(_UID, Zero)
             Name(_CCA, One)       // DMA is cache coherent (it is the hypervisor copying memory)
             Name (_CRS, ResourceTemplate () {
-                QWordMemory (
-                ResourceConsumer,     // ResourceUsage
-                PosDecode,            // Decode
-                MinFixed,             // IsMinFixed
-                MaxFixed,             // IsMaxFixed
-                NonCacheable,         // Cacheable
-                ReadWrite,            // ReadAndWrite
-                0x0000000000000000,   // AddressGranularity - GRA
-                0x5300000000,         // AddressMinimum - MIN
-                0x530000ffff,         // AddressMaximum - MAX
-                0x0000000000000000,   // AddressTranslation - TRA
-                0x0000000000010000    // RangeLength - LEN
-                )
-                Interrupt(ResourceConsumer, Level, ActiveHigh, Exclusive) { 999 }
+                Memory32Fixed (ReadWrite, 0xF0000000, 0x00010000)
+                Interrupt(ResourceConsumer, Level, ActiveHigh, Exclusive) { 201 }
             })
             Method (_STA) {
                 Return (0xF)
             }
         }
-        //
-        // Die 0, always present.
-        //
         Device(DIE0) {
             Name(_HID, "ACPI0010") // all "processor containers" must have this HID
             Name(_UID, Zero) // unique identifier of the container
